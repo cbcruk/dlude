@@ -67,7 +67,7 @@
 | 런타임 | Cloudflare Workers + Durable Objects | 병원 하나 = Durable Object 하나(3.2절) |
 | 서버 프레임워크 | **Effect 4 + `effect/http-api`** | semu·hemr와 같음. HTTP 계약 하나에서 핸들러·클라이언트·OpenAPI를 만든다. Hono를 대체 |
 | 검증·스키마 | **Effect Schema** | API, AI 구조화 출력, 폼 검증에 같은 Schema 사용. Zod를 대체 |
-| 저장 | Durable Object 내장 SQLite | 트랜잭션이 동기·직렬이라 "요청 하나 = 트랜잭션 하나"와 "읽은 사실이 판정과 저장 사이에 바뀌지 않음"(semu M3)이 그대로 성립. 저장 계층은 semu `TableFactory`에 DO 구현을 하나 더한다. Drizzle 대신 |
+| 저장 | Durable Object 내장 SQLite + `effect/sql` (`@effect/sql-sqlite-do`, 테스트는 `@effect/sql-sqlite-node`) | 단일 작성자라 "요청 하나 = 트랜잭션 하나"와 "읽은 사실이 판정과 저장 사이에 바뀌지 않음"(semu M3)이 그대로 성립(스파이크에서 동시 요청 50개로 확인). 저장 계층은 semu `TableFactory`를 `SqlClient` 위로 옮긴다. Drizzle 대신 |
 | 파일 | R2 | 녹음, 동의서·급여명세서 PDF. 업로드는 서명된 URL(hemr `audioUploadId` 방식) |
 | 정기 작업 | Worker Cron Trigger → 병원 DO | 야간 지표 스냅샷, 아침 후속 관리 목록 |
 | outbox 릴레이·정책 | DO alarm | 커밋 직후 alarm을 걸어 정책을 돌린다. 프로세스 안 1초 루프를 대체 |
@@ -293,8 +293,7 @@ chart_patient(pat_) / chart_appointment(apt_) / chart_treatment_plan(tpl_) / cha
 
 ## 10. 결정이 필요한 열린 질문
 
-- **Alchemy v2와 Effect 버전 맞춤.** semu·hemr는 `effect@4.1.2`다. Alchemy v2가 요구하는 Effect 버전과 같은 그래프로 묶이는지, `effect/http-api`를 Durable Object 안에서 띄우는 방법(웹 핸들러 변환)을 0단계 첫 작업으로 확인한다. 어긋나면 스택 파일만 Alchemy 쪽 Effect를 쓰고 앱은 별도 버전으로 둔다
-- **DO SQLite 확인 항목:** FTS5 지원 여부, `transactionSync` 안에서 Effect 저장소를 돌리는 방식(동기 API라 `Effect.sync`로 감쌈), 저장 용량 한도
+- ~~Alchemy v2와 Effect 버전 맞춤, DO에서 `effect/http-api`, DO SQLite FTS5·트랜잭션~~ → **확인함** ([스파이크](features/00-foundation/spike.md)). Alchemy 2.0.0-beta.87은 `effect ^4.1.4`를 요구하므로 semu·hemr의 `4.1.2`보다 올린다. 트랜잭션은 `@effect/sql-sqlite-do`의 `withTransaction`(내부 `storage.transaction()`)을 쓴다. 남은 것: 배포 환경 FTS5, DO 저장 용량 한도
 - **배포된 데모에서 P6를 어떻게 보일지:** 로컬 모델을 Cloudflare Tunnel로 붙일지, 배포 데모는 가상 데이터 + CLOUD 어댑터로만 둘지
 - **semu·hemr 코드 재사용 방식:** `shared/`를 복사해 시작할지, 세 저장소가 함께 쓰는 패키지로 뽑을지 (뽑으면 저장 계층을 Node SQLite·DO SQLite 둘 다 받게 일반화해야 함)
 - 화자 분리를 쓸지, 쓴다면 어떤 서비스로 할지 (로컬 pyannote는 Python 사이드카가 필요함)
