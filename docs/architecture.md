@@ -282,7 +282,7 @@ chart_patient(pat_) / chart_appointment(apt_) / chart_treatment_plan(tpl_) / cha
 
 | 단계 | 내용 | 완료 기준 |
 |---|---|---|
-| **0. 기반** | git·CI·후크·`pnpm verify`([process.md 5절](process.md#5-강제-장치)), Alchemy 스택(Worker + ClinicDO + R2 + Vite 웹), Effect HttpApi 뼈대, semu·hemr `shared/`(ids·problem·http·events·jobs·audit)를 DO SQLite 위로 옮김, 로그인 + TOTP, InternalChart + 가상 데이터 시드, `ai` 포트(openai-compatible + fake) | `alchemy dev`로 로그인하면 가상 환자 목록이 보임. 저장소 테스트가 메모리·SQLite 둘 다 통과. ai fake 테스트 통과. `openapi.json` 저장본 테스트 |
+| **0. 기반** | git·CI·후크·`pnpm verify`([process.md 5절](process.md#5-강제-장치)), Alchemy 스택(Worker + ClinicDO + R2 + Vite 웹), Effect HttpApi 뼈대, semu·hemr `shared/`(ids·problem·http·events·jobs·audit)를 DO SQLite 위로 옮김, 로그인 + TOTP, InternalChart + 가상 데이터 시드, `ai` 포트(openai-compatible + fake) | `alchemy dev`로 로그인하면 가상 환자 목록이 보임. 저장소 테스트가 인메모리 SQLite로 통과([F2](features/00-foundation/spec.md#결정)). ai fake 테스트 통과. `openapi.json` 저장본 테스트 |
 | **1. 포털 + 메신저** | A(MVP), B(MVP), DO WebSocket | 두 브라우저에서 진료실 호출을 보내고 받음, 만료일 색상 표시 |
 | **2. 음성 차팅** | D(MVP), review 큐 | 샘플 음성 → 전사 → 요약 초안 → `:review` 없이는 `:commit`이 409 (판정 테스트로 보장) |
 | **3. 후속 관리** | E(MVP), outbox 정책 | 예약 취소 → 대기자 알림까지 통합 테스트(`@alchemy.run/test`) |
