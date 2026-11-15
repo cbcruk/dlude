@@ -1,6 +1,6 @@
 ---
-status: draft
-approved_on:
+status: approved
+approved_on: 2026-11-16
 intent: ./intent.md
 ---
 
