@@ -57,7 +57,7 @@ export default class Clinic extends Cloudflare.DurableObject<Clinic>()(
 
 ## spec에 넘길 것
 
-- **저장 계층:** semu `TableFactory`의 SQLite 구현을 `node:sqlite` 대신 `effect/sql`의 `SqlClient`로 쓰면 Node(테스트)와 DO(런타임)가 같은 코드를 쓴다. 테스트는 `@effect/sql-sqlite-node`, 런타임은 `@effect/sql-sqlite-do`
+- **저장 계층:** `effect/sql`의 `SqlClient` 위에 두면 Node(테스트)와 DO(런타임)가 같은 코드를 쓴다. 테스트는 `@effect/sql-sqlite-node`, 런타임은 `@effect/sql-sqlite-do`. (처음에는 semu `TableFactory`를 옮기자고 적었으나, spec [F1](spec.md#결정)에서 이미 `effect/sql` 위에 있는 hemr `shared/db`로 정했다)
 - **UnitOfWork:** semu의 `UnitOfWorkMiddleware`(4xx·5xx면 되돌림)를 `sql.withTransaction`으로 구현. `keepChanges`(실패 응답과 함께 남길 쓰기)는 트랜잭션 중첩(savepoint)으로 되는지 확인 필요
 - **타입:** 스파이크는 `as any` 두 곳(`state.raw.storage`의 타입 선언 차이, `fetch`의 Effect 요구 타입)으로 넘겼다. spec 단계에서 `tsc`로 정리할 것
 - **아직 확인하지 않은 것:** DO alarm으로 outbox 정책 돌리기, WebSocket Hibernation, Cron → DO, R2 서명 URL, 배포 환경 FTS5, `HttpPlatformStub` 대신 공식 웹 플랫폼 레이어가 있는지

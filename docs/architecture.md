@@ -67,7 +67,7 @@
 | 런타임 | Cloudflare Workers + Durable Objects | 병원 하나 = Durable Object 하나(3.2절) |
 | 서버 프레임워크 | **Effect 4 + `effect/http-api`** | semu·hemr와 같음. HTTP 계약 하나에서 핸들러·클라이언트·OpenAPI를 만든다. Hono를 대체 |
 | 검증·스키마 | **Effect Schema** | API, AI 구조화 출력, 폼 검증에 같은 Schema 사용. Zod를 대체 |
-| 저장 | Durable Object 내장 SQLite + `effect/sql` (`@effect/sql-sqlite-do`, 테스트는 `@effect/sql-sqlite-node`) | 단일 작성자라 "요청 하나 = 트랜잭션 하나"와 "읽은 사실이 판정과 저장 사이에 바뀌지 않음"(semu M3)이 그대로 성립(스파이크에서 동시 요청 50개로 확인). 저장 계층은 semu `TableFactory`를 `SqlClient` 위로 옮긴다. Drizzle 대신 |
+| 저장 | Durable Object 내장 SQLite + `effect/sql` (`@effect/sql-sqlite-do`, 테스트는 `@effect/sql-sqlite-node`) | 단일 작성자라 "요청 하나 = 트랜잭션 하나"와 "읽은 사실이 판정과 저장 사이에 바뀌지 않음"(semu M3)이 그대로 성립(스파이크에서 동시 요청 50개로 확인). 저장 계층은 hemr `shared/db`(마이그레이션 + `Transaction`)를 옮긴다([F1](features/00-foundation/spec.md#결정)). Drizzle 대신 |
 | 파일 | R2 | 녹음, 동의서·급여명세서 PDF. 업로드는 서명된 URL(hemr `audioUploadId` 방식) |
 | 정기 작업 | Worker Cron Trigger → 병원 DO | 야간 지표 스냅샷, 아침 후속 관리 목록 |
 | outbox 릴레이·정책 | DO alarm | 커밋 직후 alarm을 걸어 정책을 돌린다. 프로세스 안 1초 루프를 대체 |
@@ -90,7 +90,7 @@
 
 - **왜 D1이 아닌가:** D1은 대화형 트랜잭션(`BEGIN … 읽기 … 판정 … COMMIT`)이 없고 `batch`만 있다. semu·hemr의 서비스 흐름(읽기 → 판정 → 저장을 한 트랜잭션)을 그대로 옮기려면 단일 작성자 SQLite가 필요하다. 대가: 병원 간 집계(여러 병원 대시보드)는 DO마다 물어 모아야 한다. 학습 범위에서는 병원 하나라 문제없다
 - **되돌릴 조건:** 한 병원의 요청이 DO 하나의 처리량을 넘거나, 병원 간 조회가 필수 기능이 되면 컨텍스트 단위로 DO를 나누거나 D1 + 낙관적 잠금으로 옮긴다
-- 모든 HTTP 핸들러는 DO 안에서 돈다. Worker는 인증 토큰 검증과 DO 라우팅만 한다
+- 인증을 포함한 모든 HTTP 핸들러는 DO 안에서 돈다. Worker는 경로만 나눈다(`/v1/*` → DO, 그 밖 → 웹 정적 파일, [F4·F6](features/00-foundation/spec.md#결정))
 
 ### 3.3 Alchemy 스택
 
@@ -137,7 +137,7 @@ dlude/
 │  │  │  │  └─ review/          # 사람 판정 큐·블라인드 A/B·정답지
 │  │  │  ├─ ai/                 # AI 포트·어댑터·조합기 (5절)
 │  │  │  ├─ wiring/             # <consumer>-<provider>.ts 어댑터
-│  │  │  └─ shared/             # ids, problem, http(paging·etag·idempotency), persistence(TableFactory: memory·do-sqlite),
+│  │  │  └─ shared/             # ids, problem, http(paging·etag·idempotency), db(마이그레이션·Transaction),
 │  │  │                         # events(outbox·policy), jobs, audit, personal-data, time, money
 │  │  └─ test/fixtures/rules/
 │  └─ web/                      # React SPA (포털·메신저·상담·동의서·원장 대시보드)
