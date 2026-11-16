@@ -1,0 +1,4 @@
+pnpm-lock.yaml
+*.md
+test/fixtures/
+docs/reference/openapi.json

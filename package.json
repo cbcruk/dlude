@@ -1,0 +1,24 @@
+{
+  "name": "dlude",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=24.22",
+    "pnpm": ">=12"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit && pnpm -r --if-present typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "verify": "pnpm typecheck && pnpm format:check && pnpm test"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "prettier": "3.9.10",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
