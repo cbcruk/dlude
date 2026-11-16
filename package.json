@@ -13,10 +13,15 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "verify": "pnpm typecheck && pnpm format:check && pnpm test"
+    "verify": "pnpm typecheck && pnpm format:check && pnpm test",
+    "dev": "pnpm --filter @dlude/web build && alchemy dev",
+    "deploy": "pnpm --filter @dlude/web build && alchemy deploy"
   },
   "devDependencies": {
+    "@alchemy.run/cloudflare": "2.0.0-beta.87",
     "@types/node": "^26.6.6",
+    "alchemy": "2.0.0-beta.87",
+    "effect": "4.1.4",
     "prettier": "3.9.10",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
