@@ -2,13 +2,15 @@ import { Effect, Option, Redacted } from 'effect'
 import { fromBase64Url, randomBytes, toBase64Url, utf8 } from './bytes.ts'
 
 /**
- * TOTP 비밀 값처럼 저장해야 하지만 원문이 새면 안 되는 값을 봉인한다. `DATA_KEY`(32바이트, base64url)로 AES-256-GCM.
+ * TOTP 비밀 값처럼 저장해야 하지만 원문이 새면 안 되는 값을 봉인한다. `DATA_KEY`(32바이트, 16진 64자. 배포에서는
+ * `Alchemy.makeRandom`이 만든다)로 AES-256-GCM.
  * 형식은 `v1.iv.ciphertext`. 키를 바꾸면 버전을 올린다.
  */
 const importKey = (dataKey: Redacted.Redacted<string>) =>
   Effect.promise(async () => {
-    const raw = fromBase64Url(Redacted.value(dataKey))
-    if (raw === null || raw.length !== 32) throw new Error('DATA_KEY는 32바이트 base64url이어야 한다')
+    const hex = Redacted.value(dataKey)
+    if (!/^[0-9a-f]{64}$/i.test(hex)) throw new Error('DATA_KEY는 32바이트(16진 64자)여야 한다')
+    const raw = Uint8Array.from(hex.match(/../g)!, (pair) => parseInt(pair, 16))
     return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt'])
   })
 
@@ -35,4 +37,5 @@ export const open = (dataKey: Redacted.Redacted<string>, sealed: string) =>
   })
 
 /** 새 `DATA_KEY`. 개발·테스트 설정을 만들 때 쓴다. */
-export const generateDataKey = (): string => toBase64Url(randomBytes(32))
+export const generateDataKey = (): string =>
+  Array.from(randomBytes(32), (byte) => byte.toString(16).padStart(2, '0')).join('')

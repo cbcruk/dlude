@@ -108,7 +108,7 @@ export default Alchemy.Stack(
 )
 ```
 
-- 단계(stage)는 개인 개발(`$USER`), PR 미리보기, `demo` 셋. 비밀 값(`AUTH_SECRET`, `PATIENT_DATA_KEY`, 외부 LLM 키)은 Alchemy 비밀로 넘긴다
+- 단계(stage)는 개인 개발(`$USER`), PR 미리보기, `demo` 셋. 비밀 값(`JWT_SECRET`, `DATA_KEY`, 외부 LLM 키)은 Alchemy 비밀로 넘긴다. 앞의 둘은 `Alchemy.makeRandom`이 단계마다 만든다([identity-access.md](design/identity-access.md) "비밀 값")
 - `alchemy dev`에서는 R2·DO·Cron이 로컬 시뮬레이터로 돈다
 
 ## 4. 저장소 구조

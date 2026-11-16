@@ -3,7 +3,9 @@ import * as SqliteClient from '@effect/sql-sqlite-do/SqliteClient'
 import { Effect, Layer, Scope } from 'effect'
 import { HttpRouter, HttpServer } from 'effect/http'
 import { AppLive } from './app.ts'
+import { AuthConfig } from './modules/identity/auth/auth-config.ts'
 import { migrate, PersistenceLive } from './persistence.ts'
+import { seed } from './seed.ts'
 import { drainPolicies, hasPendingEvents } from './shared/events/policy.ts'
 import { policies } from './wiring/policies.ts'
 
@@ -26,8 +28,11 @@ export default class ClinicDO extends Cloudflare.DurableObject<ClinicDO>()(
     return Effect.gen(function* () {
       // 인스턴스 수명 동안 열려 있는 스코프. 요청마다 레이어를 다시 만들지 않으려고 둔다
       const scope = yield* Scope.make()
+      // 저장 서비스 + 인증 설정(Worker env). 마이그레이션 뒤 표가 비어 있으면 가상 데이터 시드를 넣는다
       const persistence = yield* Layer.build(
-        PersistenceLive.pipe(
+        Layer.effectDiscard(seed).pipe(
+          Layer.provideMerge(PersistenceLive),
+          Layer.provideMerge(AuthConfig.layerFromEnv),
           Layer.provideMerge(Layer.effectDiscard(migrate)),
           Layer.provideMerge(SqliteClient.layer({ storage: state.raw.storage })),
         ),

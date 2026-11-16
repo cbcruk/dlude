@@ -51,6 +51,30 @@ POST   /me/totp:disable                { code } → 204
 - refresh token은 256비트 난수, 저장은 SHA-256, 쿠키 `dlude_refresh`(`HttpOnly; Secure; SameSite=Strict; Path=/v1/auth`). 세션은 만든 뒤 12시간에 끝나고 회전해도 늘지 않는다(진료일 하루). 회전, 10초 유예(유예 안이면 access token만 새로 주고 쿠키는 그대로), 유예 밖 재사용이면 세션 폐기(hemr와 같음)
 - 비밀번호 5회 연속 실패면 잠금. 5번째 실패 응답부터 423이고, 잠글 때 그 직원의 세션을 모두 끝낸다(hemr와 같음). 0단계에는 잠금 해제 API가 없다. 로컬은 `pnpm dev:reset`으로 푼다
 - 없는 아이디도 고정 해시로 검증해 응답 시간으로 존재 여부가 드러나지 않게 한다
+- 로그아웃은 로그인하지 않아도 부를 수 있다. refresh 쿠키가 가리키는 세션을, 없으면 access token의 세션을 끝낸다(만료된 access token도 서명이 맞으면 받는다). 끝낼 세션이 없어도 204
+- `/me/totp:disable`의 `totp:disable_own` 권한은 엔드포인트 선언이 아니라 서비스가 본다. 원장에게 403 대신 409 `TOTP_REQUIRED_FOR_ROLE`로 이유를 알리기 위해서다
+
+## 접근 규칙
+
+엔드포인트마다 `Access` annotation으로 규칙을 선언한다(hemr와 같음).
+
+| 규칙 | 미들웨어 | 쓰는 곳 |
+|---|---|---|
+| `PUBLIC` | 없음 | `/health`, 로그인·refresh·로그아웃 |
+| `SIGNED_IN` | `Authentication` | `/me`, `/me/totp:disable` |
+| `PERMISSIONS` | `Authorization` | 업무 엔드포인트 전부 |
+
+선언이 없거나 규칙과 미들웨어가 맞지 않는 엔드포인트가 하나라도 있으면 앱 Layer가 만들어지지 않는다(`accessCheck`). 권한은 토큰에 담지 않고 요청마다 역할에서 계산한다.
+
+## 비밀 값
+
+| env | 내용 | 출처 |
+|---|---|---|
+| `JWT_SECRET` | access token 서명 키(32자 이상) | `Alchemy.makeRandom`. 단계마다 한 번 만들어 Alchemy 상태에 둔다 |
+| `DATA_KEY` | TOTP 비밀 값 봉인 키(32바이트, 16진 64자) | 같음 |
+| `DEV_PASSWORD` | 시드 직원 비밀번호 | 없으면 `dlude-dev-password` |
+
+`DATA_KEY`를 바꾸면 이미 봉인한 TOTP 비밀 값을 열 수 없어 그 직원은 코드를 맞힐 수 없다. 로컬은 `pnpm dev:reset`으로 처음부터 시작한다.
 
 ## 오류 코드
 
