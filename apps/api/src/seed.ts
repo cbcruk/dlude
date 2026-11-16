@@ -1,4 +1,6 @@
 import { Effect } from 'effect'
+import { PatientRepository } from './modules/chart/patient-repository.ts'
+import { seedChart } from './modules/chart/seed.ts'
 import { IdentityRepository } from './modules/identity/identity-repository.ts'
 import { seedIdentity } from './modules/identity/seed.ts'
 
@@ -8,4 +10,5 @@ import { seedIdentity } from './modules/identity/seed.ts'
  */
 export const seed = Effect.gen(function* () {
   yield* seedIdentity
-}).pipe(Effect.provide(IdentityRepository.layer))
+  yield* seedChart
+}).pipe(Effect.provide([IdentityRepository.layer, PatientRepository.layer]))
