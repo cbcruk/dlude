@@ -9,3 +9,4 @@
 | [conventions.md](conventions.md) | API·코드 규약. hemr 규약을 따르고 dlude만의 차이를 적음 | 0 |
 | [identity-access.md](identity-access.md) | 직원 계정, 역할·권한, 로그인 + TOTP, 세션, 보안 기록 | 0 |
 | [chart.md](chart.md) | InternalChart: 가상 환자·예약·치료계획, `ChartSystem` 포트 | 0 |
+| [ai.md](ai.md) | AI 포트, 폴백 체인, 환자 정보 정책(P6) | 0 |
