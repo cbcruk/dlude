@@ -1,21 +1,30 @@
-import { StrictMode, useEffect, useState } from 'react'
+import { StrictMode, useEffect, useSyncExternalStore } from 'react'
 import { createRoot } from 'react-dom/client'
+import { createApi } from './api-client.ts'
+import { createSession } from './auth/session.ts'
+import './index.css'
+import { LoginRoute } from './routes/login.tsx'
+import { PatientsRoute } from './routes/patients.tsx'
 
-// 작업 2의 뼈대: 같은 출처의 /v1/health를 불러 API까지 이어졌는지 보여 준다. 로그인 화면은 작업 10.
+// access token은 세션이 갖고, API 클라이언트는 매 요청에 세션의 토큰을 붙인다
+let readToken: () => string | null = () => null
+const api = createApi(() => readToken())
+const session = createSession({ refresh: api.refresh })
+readToken = () => session.token
+
 function App() {
-  const [status, setStatus] = useState('확인 중')
+  const state = useSyncExternalStore(session.subscribe, () => session.state)
   useEffect(() => {
-    fetch('/v1/health')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((body: { status: string }) => setStatus(body.status))
-      .catch((e: unknown) => setStatus(`실패: ${String(e)}`))
+    if (session.state === 'unknown') void session.restore()
   }, [])
-  return (
-    <main>
-      <h1>dlude</h1>
-      <p>API: {status}</p>
-    </main>
-  )
+  switch (state) {
+    case 'unknown':
+      return <p className="text-muted-foreground p-4 text-sm">불러오는 중…</p>
+    case 'signedOut':
+      return <LoginRoute api={api} onSignedIn={session.signIn} />
+    case 'signedIn':
+      return <PatientsRoute api={api} session={session} />
+  }
 }
 
 const root = document.getElementById('root')
