@@ -192,16 +192,19 @@ importers:
     dependencies:
       '@alchemy.run/cloudflare':
         specifier: 2.0.0-beta.87
-        version: 2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/node@26.6.6)(alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0))(effect@4.1.4)(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))
+        version: 2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/node@26.6.6)(alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/react@19.3.0)(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0))(effect@4.1.4)(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))
       '@effect/sql-sqlite-do':
         specifier: 4.1.4
         version: 4.1.4(effect@4.1.4)
       alchemy:
         specifier: 2.0.0-beta.87
-        version: 2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0)
+        version: 2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/react@19.3.0)(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0)
       effect:
         specifier: 4.1.4
         version: 4.1.4
+      ulid:
+        specifier: ^3.0.2
+        version: 3.0.2
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 5.20261114.1
@@ -1368,6 +1371,10 @@ packages:
     engines: {node: '>=16.20.0'}
     hasBin: true
 
+  ulid@3.0.2:
+    resolution: {integrity: sha512-yu26mwteFYzBAot7KVMqFGCVpsF6g8wXfJzQUHvu1no3+rRRSFcSV2nKeYvNPLD2J4b08jYBDhHUjeH0ygIl9w==}
+    hasBin: true
+
   undici-types@8.9.0:
     resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
 
@@ -1517,12 +1524,6 @@ snapshots:
       alchemy: 2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/react@19.3.0)(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0)
       effect: 4.1.4
 
-  '@alchemy.run/acme@2.0.0-beta.87(alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0))(effect@4.1.4)':
-    dependencies:
-      '@distilled.cloud/acme': 1.0.0-rc.20(effect@4.1.4)
-      alchemy: 2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0)
-      effect: 4.1.4
-
   '@alchemy.run/cloudflare-runtime@2.0.0-beta.87(@distilled.cloud/cloudflare@1.0.0-rc.20(effect@4.1.4))(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/node@26.6.6)(effect@4.1.4)(rolldown@1.2.16)(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))':
     dependencies:
       '@alchemy.run/node-utils': 2.0.0-beta.87
@@ -1577,46 +1578,9 @@ snapshots:
       - proxy-agent
       - typescript
 
-  '@alchemy.run/cloudflare@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/node@26.6.6)(alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0))(effect@4.1.4)(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))':
-    dependencies:
-      '@alchemy.run/acme': 2.0.0-beta.87(alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0))(effect@4.1.4)
-      '@alchemy.run/cloudflare-runtime': 2.0.0-beta.87(@distilled.cloud/cloudflare@1.0.0-rc.20(effect@4.1.4))(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/node@26.6.6)(effect@4.1.4)(rolldown@1.2.16)(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))
-      '@alchemy.run/docker': 2.0.0-beta.87(alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0))(effect@4.1.4)
-      '@alchemy.run/sql': 2.0.0-beta.87(alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0))(effect@4.1.4)
-      '@distilled.cloud/aws': 1.0.0-rc.20(effect@4.1.4)
-      '@distilled.cloud/aws4signer': 1.0.0-rc.20(effect@4.1.4)
-      '@distilled.cloud/cloudflare': 1.0.0-rc.20(effect@4.1.4)
-      '@distilled.cloud/core': 1.0.0-rc.20(effect@4.1.4)
-      '@distilled.cloud/iceberg': 1.0.0-rc.20(effect@4.1.4)
-      '@effect/sql-d1': 4.1.4(effect@4.1.4)
-      alchemy: 2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0)
-      effect: 4.1.4
-      pathe: 2.0.3
-      picomatch: 4.0.7
-      rolldown: 1.2.16
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@effect/platform-node': 4.1.4(effect@4.1.4)(redis@6.3.1)
-      vite: 8.3.8(@types/node@26.6.6)(yaml@2.9.1)
-    transitivePeerDependencies:
-      - '@effect/sql-libsql'
-      - '@effect/sql-mysql2'
-      - '@effect/sql-pg'
-      - '@types/node'
-      - mysql2
-      - pg
-      - proxy-agent
-      - typescript
-
   '@alchemy.run/docker@2.0.0-beta.87(alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/react@19.3.0)(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0))(effect@4.1.4)':
     dependencies:
       alchemy: 2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/react@19.3.0)(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0)
-      effect: 4.1.4
-      rolldown: 1.2.16
-
-  '@alchemy.run/docker@2.0.0-beta.87(alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0))(effect@4.1.4)':
-    dependencies:
-      alchemy: 2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0)
       effect: 4.1.4
       rolldown: 1.2.16
 
@@ -1625,8 +1589,6 @@ snapshots:
       chokidar: 5.0.0
       rolldown: 1.2.16
 
-  '@alchemy.run/sigil@0.1.0-alpha.4': {}
-
   '@alchemy.run/sigil@0.1.0-alpha.4(@types/react@19.3.0)':
     optionalDependencies:
       '@types/react': 19.3.0
@@ -1634,11 +1596,6 @@ snapshots:
   '@alchemy.run/sql@2.0.0-beta.87(alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/react@19.3.0)(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0))(effect@4.1.4)':
     dependencies:
       alchemy: 2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(@types/react@19.3.0)(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0)
-      effect: 4.1.4
-
-  '@alchemy.run/sql@2.0.0-beta.87(alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0))(effect@4.1.4)':
-    dependencies:
-      alchemy: 2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0)
       effect: 4.1.4
 
   '@cloudflare/unenv-preset@2.16.2(unenv@2.0.0-rc.25)(workerd@1.20261026.1)':
@@ -2128,26 +2085,6 @@ snapshots:
       - '@types/react'
       - react-devtools-core
 
-  alchemy@2.0.0-beta.87(@effect/platform-node@4.1.4(effect@4.1.4)(redis@6.3.1))(effect@4.1.4)(vite@8.3.8(@types/node@26.6.6)(yaml@2.9.1))(ws@8.23.0):
-    dependencies:
-      '@alchemy.run/node-utils': 2.0.0-beta.87
-      '@alchemy.run/sigil': 0.1.0-alpha.4
-      capnweb: 0.12.0
-      effect: 4.1.4
-      fflate: 0.8.3
-      pathe: 2.0.3
-      picomatch: 4.0.7
-      rolldown: 1.2.16
-      tinyglobby: 0.2.17
-      yaml: 2.9.1
-    optionalDependencies:
-      '@effect/platform-node': 4.1.4(effect@4.1.4)(redis@6.3.1)
-      vite: 8.3.8(@types/node@26.6.6)(yaml@2.9.1)
-      ws: 8.23.0
-    transitivePeerDependencies:
-      - '@types/react'
-      - react-devtools-core
-
   ansi-regex@6.6.0: {}
 
   ansi-styles@6.2.3: {}
@@ -2437,6 +2374,8 @@ snapshots:
       '@typescript/typescript-sunos-x64': 7.0.2
       '@typescript/typescript-win32-arm64': 7.0.2
       '@typescript/typescript-win32-x64': 7.0.2
+
+  ulid@3.0.2: {}
 
   undici-types@8.9.0: {}
 
