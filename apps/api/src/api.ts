@@ -1,6 +1,7 @@
 import { Schema } from 'effect'
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, OpenApi } from 'effect/http-api'
 import { Access } from './modules/identity/auth/access.ts'
+import { PatientsApi } from './modules/chart/patients.api.ts'
 import { AuthApi, MeApi } from './modules/identity/auth/auth.api.ts'
 import { RequestValidation } from './shared/problem/request-validation.ts'
 
@@ -28,6 +29,7 @@ export class Api extends HttpApi.make('dlude')
   .add(SystemApi)
   .add(AuthApi)
   .add(MeApi)
+  .add(PatientsApi)
   .middleware(RequestValidation)
   .annotate(HttpApi.ParseOptions, { errors: 'all' })
   .prefix('/v1') {}

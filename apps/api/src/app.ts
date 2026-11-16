@@ -4,6 +4,8 @@ import { HttpRouter, HttpServerError, HttpServerRespondable } from 'effect/http'
 import { HttpApiBuilder } from 'effect/http-api'
 import { Api } from './api.ts'
 import { HealthHttpLive } from './health.http.ts'
+import { ChartSystem } from './modules/chart/chart.public.ts'
+import { PatientsHttpLive } from './modules/chart/patients.http.ts'
 import { IdentityRepository } from './modules/identity/identity-repository.ts'
 import { Auth } from './modules/identity/auth/auth.ts'
 import { AuthHttpLive, MeHttpLive } from './modules/identity/auth/auth.http.ts'
@@ -44,6 +46,7 @@ export const IdentityLive = Layer.mergeAll(AuthenticationLive, AuthorizationLive
 export const AppLive = HttpApiBuilder.layer(Api).pipe(
   Layer.provide(HealthHttpLive),
   Layer.provide(Layer.mergeAll(AuthHttpLive, MeHttpLive)),
+  Layer.provide(PatientsHttpLive.pipe(Layer.provide(ChartSystem.internal))),
   Layer.provide(IdentityLive),
   Layer.provide(RequestValidationLive),
   Layer.provide(accessCheck(Api)),
