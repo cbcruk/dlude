@@ -32,4 +32,9 @@ export class Api extends HttpApi.make('dlude')
   .add(PatientsApi)
   .middleware(RequestValidation)
   .annotate(HttpApi.ParseOptions, { errors: 'all' })
+  .annotate(OpenApi.Title, 'dlude')
+  .annotate(
+    OpenApi.Description,
+    '치과 AX 재구현(학습·포트폴리오)의 HTTP 계약. 가상 데이터로만 동작한다. 오류는 RFC 9457 Problem Details(`application/problem+json`)이고 `code`로 구분한다.',
+  )
   .prefix('/v1') {}

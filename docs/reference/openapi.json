@@ -1,0 +1,1471 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "dlude",
+    "version": "0.0.1",
+    "description": "치과 AX 재구현(학습·포트폴리오)의 HTTP 계약. 가상 데이터로만 동작한다. 오류는 RFC 9457 Problem Details(`application/problem+json`)이고 `code`로 구분한다."
+  },
+  "paths": {
+    "/v1/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "operationId": "system.health",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "서버가 요청을 받을 수 있다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "additionalProperties": false,
+                  "description": "서버가 요청을 받을 수 있다."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_FAILED`: 요청이 받을 수 없는 값이다. 경로·쿼리·헤더·본문이 스키마를 통과하지 못했거나 서비스의 입력 규칙에 맞지 않는다. `violations`는 첫 오류에서 멈추지 않고 모은 모든 위반의 필드와 코드다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailedEncoded"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: 예상 밖의 서버 오류. 원인은 응답에 싣지 않고 로그에만 남긴다(P5).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalEncoded"
+                }
+              }
+            }
+          }
+        },
+        "summary": "생존 확인"
+      }
+    },
+    "/v1/auth/sessions": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "auth.login",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "비밀번호가 맞았다. 세션은 아직 없고 TOTP를 거쳐야 한다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "next": {
+                      "type": "string",
+                      "enum": [
+                        "TOTP",
+                        "TOTP_ENROLL"
+                      ],
+                      "description": "다음 단계. `TOTP`면 인증 앱 코드를, `TOTP_ENROLL`이면 `otpauthUri`를 인증 앱에 등록한 뒤 첫 코드를 `:verify-totp`로 보낸다."
+                    },
+                    "challengeToken": {
+                      "type": "string",
+                      "description": "`:verify-totp`에 보내는 로그인 도전. 5분."
+                    },
+                    "expiresIn": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991,
+                      "description": "로그인 도전 수명(초)."
+                    },
+                    "otpauthUri": {
+                      "type": "string",
+                      "description": "`TOTP_ENROLL`일 때만. QR로 보여 줄 `otpauth://` URI."
+                    }
+                  },
+                  "required": [
+                    "next",
+                    "challengeToken",
+                    "expiresIn"
+                  ],
+                  "additionalProperties": false,
+                  "description": "비밀번호가 맞았다. 세션은 아직 없고 TOTP를 거쳐야 한다."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_FAILED`: 요청이 받을 수 없는 값이다. 경로·쿼리·헤더·본문이 스키마를 통과하지 못했거나 서비스의 입력 규칙에 맞지 않는다. `violations`는 첫 오류에서 멈추지 않고 모은 모든 위반의 필드와 코드다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailedEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`INVALID_CREDENTIALS`: 아이디 또는 비밀번호가 틀렸다. 어느 쪽인지 말하지 않는다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidCredentialsEncoded"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "`ACCOUNT_LOCKED`: 비밀번호를 5회 연속 틀려 잠겼다. 0단계에는 해제 API가 없다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountLockedEncoded"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: 예상 밖의 서버 오류. 원인은 응답에 싣지 않고 로그에만 남긴다(P5).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalEncoded"
+                }
+              }
+            }
+          }
+        },
+        "summary": "로그인 시작(비밀번호)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "loginId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "description": "로그인 아이디. 대소문자를 가리지 않는다."
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256,
+                    "description": "비밀번호. 256자까지."
+                  }
+                },
+                "required": [
+                  "loginId",
+                  "password"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/v1/auth/sessions:verify-totp": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "auth.verifyTotp",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "로그인했다. refresh token은 본문에 싣지 않고 `HttpOnly` 쿠키 `dlude_refresh`로 준다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": {
+                      "type": "string",
+                      "description": "`Authorization: Bearer`로 보내는 access token. 10분."
+                    },
+                    "expiresIn": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991,
+                      "description": "access token 수명(초)."
+                    },
+                    "staff": {
+                      "$ref": "#/components/schemas/StaffSummary"
+                    }
+                  },
+                  "required": [
+                    "accessToken",
+                    "expiresIn",
+                    "staff"
+                  ],
+                  "additionalProperties": false,
+                  "description": "로그인했다. refresh token은 본문에 싣지 않고 `HttpOnly` 쿠키 `dlude_refresh`로 준다."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_FAILED`: 요청이 받을 수 없는 값이다. 경로·쿼리·헤더·본문이 스키마를 통과하지 못했거나 서비스의 입력 규칙에 맞지 않는다. `violations`는 첫 오류에서 멈추지 않고 모은 모든 위반의 필드와 코드다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailedEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`CHALLENGE_INVALID`: 로그인 도전이 없거나 만료·폐기됐다. 처음부터 다시 로그인한다. | `TOTP_INVALID`: 코드가 틀리거나 이미 쓴 30초 구간의 코드다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ChallengeInvalidEncoded"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TotpInvalidEncoded"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: 예상 밖의 서버 오류. 원인은 응답에 싣지 않고 로그에만 남긴다(P5).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "로그인 도전의 TOTP 코드를 확인하고 세션을 만든다. `TOTP_ENROLL` 도전이면 첫 코드를 맞히는 순간 등록도 된다. 같은 30초 구간의 코드는 한 번만 받는다.",
+        "summary": "로그인 완료(TOTP)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "challengeToken": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "인증 앱의 6자리 코드."
+                  }
+                },
+                "required": [
+                  "challengeToken",
+                  "code"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/v1/auth/sessions:refresh": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "auth.refresh",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "새 access token. refresh token을 회전했으면 쿠키도 새로 준다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": {
+                      "type": "string",
+                      "description": "`Authorization: Bearer`로 보내는 access token. 10분."
+                    },
+                    "expiresIn": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991,
+                      "description": "access token 수명(초)."
+                    }
+                  },
+                  "required": [
+                    "accessToken",
+                    "expiresIn"
+                  ],
+                  "additionalProperties": false,
+                  "description": "새 access token. refresh token을 회전했으면 쿠키도 새로 준다."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_FAILED`: 요청이 받을 수 없는 값이다. 경로·쿼리·헤더·본문이 스키마를 통과하지 못했거나 서비스의 입력 규칙에 맞지 않는다. `violations`는 첫 오류에서 멈추지 않고 모은 모든 위반의 필드와 코드다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailedEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`REFRESH_TOKEN_INVALID`: refresh 쿠키가 없거나, 모르는 값이거나, 세션이 끝났다. | `REFRESH_TOKEN_REUSED`: 이미 회전한 refresh token이 유예 시간 밖에 다시 왔다. 세션을 폐기했다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RefreshTokenInvalidEncoded"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RefreshTokenReusedEncoded"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: 예상 밖의 서버 오류. 원인은 응답에 싣지 않고 로그에만 남긴다(P5).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalEncoded"
+                }
+              }
+            }
+          }
+        },
+        "summary": "access token 새로 받기"
+      }
+    },
+    "/v1/auth/sessions/current": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "auth.logout",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "204": {
+            "description": "로그아웃했다. refresh 쿠키를 지운다."
+          },
+          "400": {
+            "description": "`VALIDATION_FAILED`: 요청이 받을 수 없는 값이다. 경로·쿼리·헤더·본문이 스키마를 통과하지 못했거나 서비스의 입력 규칙에 맞지 않는다. `violations`는 첫 오류에서 멈추지 않고 모은 모든 위반의 필드와 코드다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailedEncoded"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: 예상 밖의 서버 오류. 원인은 응답에 싣지 않고 로그에만 남긴다(P5).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "로그인하지 않아도 부를 수 있다. refresh 쿠키나 access token이 가리키는 세션이 있으면 끝낸다.",
+        "summary": "로그아웃"
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "operationId": "me.me",
+        "parameters": [],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "로그인한 직원 자신.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "staff": {
+                      "$ref": "#/components/schemas/StaffSummary"
+                    },
+                    "permissions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "patient:read",
+                          "staff:read",
+                          "totp:disable_own"
+                        ]
+                      },
+                      "description": "역할에서 계산한 권한. 클라이언트는 메뉴를 거르는 데만 쓰고, 판정은 서버가 한다."
+                    },
+                    "totpEnrolled": {
+                      "type": "boolean",
+                      "description": "TOTP를 등록했는지."
+                    }
+                  },
+                  "required": [
+                    "staff",
+                    "permissions",
+                    "totpEnrolled"
+                  ],
+                  "additionalProperties": false,
+                  "description": "로그인한 직원 자신."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_FAILED`: 요청이 받을 수 없는 값이다. 경로·쿼리·헤더·본문이 스키마를 통과하지 못했거나 서비스의 입력 규칙에 맞지 않는다. `violations`는 첫 오류에서 멈추지 않고 모은 모든 위반의 필드와 코드다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailedEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: access token이 없거나 만료·폐기됐다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthenticatedEncoded"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: 예상 밖의 서버 오류. 원인은 응답에 싣지 않고 로그에만 남긴다(P5).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalEncoded"
+                }
+              }
+            }
+          }
+        },
+        "summary": "내 정보와 권한"
+      }
+    },
+    "/v1/me/totp:disable": {
+      "post": {
+        "tags": [
+          "me"
+        ],
+        "operationId": "me.disableTotp",
+        "parameters": [],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "TOTP 비밀 값을 지웠다. 다음 로그인에서 다시 등록한다."
+          },
+          "400": {
+            "description": "`VALIDATION_FAILED`: 요청이 받을 수 없는 값이다. 경로·쿼리·헤더·본문이 스키마를 통과하지 못했거나 서비스의 입력 규칙에 맞지 않는다. `violations`는 첫 오류에서 멈추지 않고 모은 모든 위반의 필드와 코드다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailedEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`TOTP_INVALID`: 코드가 틀리거나 이미 쓴 30초 구간의 코드다. | `UNAUTHENTICATED`: access token이 없거나 만료·폐기됐다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TotpInvalidEncoded"
+                    },
+                    {
+                      "$ref": "#/components/schemas/UnauthenticatedEncoded"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`PERMISSION_DENIED`: 역할에 이 요청의 권한이 없다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionDeniedEncoded"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`TOTP_REQUIRED_FOR_ROLE`: 원장은 TOTP를 끌 수 없다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpRequiredForRoleEncoded"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: 예상 밖의 서버 오류. 원인은 응답에 싣지 않고 로그에만 남긴다(P5).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "원장은 409 `TOTP_REQUIRED_FOR_ROLE`. 그 밖의 역할은 `totp:disable_own` 권한을 서비스가 확인한다(원장에게 이유를 알리려고 엔드포인트 선언이 아니라 서비스에서 본다). 해제는 2단계를 건너뛰는 것이 아니라 다음 로그인에서 다시 등록하게 하는 것이다.",
+        "summary": "내 TOTP 해제",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "인증 앱의 6자리 코드."
+                  }
+                },
+                "required": [
+                  "code"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/v1/patients": {
+      "get": {
+        "tags": [
+          "patients"
+        ],
+        "operationId": "patients.list",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 50,
+              "description": "검색어. 숫자 4자리면 전화번호 뒤 4자리나 차트번호 앞부분, 그 밖의 숫자(`-` 허용)면 차트번호 앞부분, 초성만이면 이름 초성, 그 밖이면 이름 일부(대소문자 무시)."
+            },
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "한 쪽의 개수입니다. 1–200이고 기본값은 50입니다."
+            },
+            "required": false
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "앞 쪽 응답의 `nextCursor`입니다."
+            },
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "찾은 환자의 한 쪽. 이름 순서.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PatientSummary"
+                      }
+                    },
+                    "nextCursor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "다음 쪽을 받을 커서입니다. 마지막 쪽이면 `null`입니다."
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "nextCursor"
+                  ],
+                  "additionalProperties": false,
+                  "description": "찾은 환자의 한 쪽. 이름 순서."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_FAILED`: 요청이 받을 수 없는 값이다. 경로·쿼리·헤더·본문이 스키마를 통과하지 못했거나 서비스의 입력 규칙에 맞지 않는다. `violations`는 첫 오류에서 멈추지 않고 모은 모든 위반의 필드와 코드다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailedEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: access token이 없거나 만료·폐기됐다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthenticatedEncoded"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`PERMISSION_DENIED`: 역할에 이 요청의 권한이 없다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionDeniedEncoded"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: 예상 밖의 서버 오류. 원인은 응답에 싣지 않고 로그에만 남긴다(P5).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "전화번호는 뒤 4자리만 싣는다. 목록은 열람 기록을 남기지 않는다.",
+        "summary": "환자 목록·검색"
+      }
+    },
+    "/v1/patients/{patientId}": {
+      "get": {
+        "tags": [
+          "patients"
+        ],
+        "operationId": "patients.get",
+        "parameters": [
+          {
+            "name": "patientId",
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "환자. 조회하면 열람 기록이 남는다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Patient"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`VALIDATION_FAILED`: 요청이 받을 수 없는 값이다. 경로·쿼리·헤더·본문이 스키마를 통과하지 못했거나 서비스의 입력 규칙에 맞지 않는다. `violations`는 첫 오류에서 멈추지 않고 모은 모든 위반의 필드와 코드다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationFailedEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`UNAUTHENTICATED`: access token이 없거나 만료·폐기됐다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthenticatedEncoded"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`PERMISSION_DENIED`: 역할에 이 요청의 권한이 없다.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PermissionDeniedEncoded"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`PATIENT_NOT_FOUND`: 없는 환자.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientNotFoundEncoded"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: 예상 밖의 서버 오류. 원인은 응답에 싣지 않고 로그에만 남긴다(P5).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "응답을 주기 전에 열람 기록(`READ patient`)을 남긴다. 기록이 실패하면 응답도 없다.",
+        "summary": "환자 상세"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "InternalEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "INTERNAL"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:internal"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              500
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "Internal server error"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "ValidationFailedEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "VALIDATION_FAILED"
+            ]
+          },
+          "violations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "field",
+                "code"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:validation-failed"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              400
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "Request validation failed"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "violations",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "PermissionDeniedEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "PERMISSION_DENIED"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:permission-denied"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              403
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "Permission denied"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "UnauthenticatedEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "UNAUTHENTICATED"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:unauthenticated"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "Authentication required"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "PatientNotFoundEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "PATIENT_NOT_FOUND"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:patient-not-found"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              404
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "Patient not found"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "Patient": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "chartNumber": {
+            "type": "string",
+            "description": "차트번호. 병원 안에서 유일한 숫자 문자열."
+          },
+          "name": {
+            "type": "string"
+          },
+          "birthDate": {
+            "type": "string",
+            "description": "생년월일 `YYYY-MM-DD`. 주민등록번호는 두지 않는다."
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "F",
+              "M"
+            ],
+            "description": "성별. `F` 또는 `M`."
+          },
+          "synthetic": {
+            "type": "boolean",
+            "description": "시드가 만든 가상 환자면 `true`. CLOUD AI는 `true`인 환자만 받는다."
+          },
+          "phone": {
+            "type": "string",
+            "description": "전화번호 전체."
+          }
+        },
+        "required": [
+          "id",
+          "chartNumber",
+          "name",
+          "birthDate",
+          "sex",
+          "synthetic",
+          "phone"
+        ],
+        "additionalProperties": false,
+        "description": "환자. 조회하면 열람 기록이 남는다."
+      },
+      "PatientSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "chartNumber": {
+            "type": "string",
+            "description": "차트번호. 병원 안에서 유일한 숫자 문자열."
+          },
+          "name": {
+            "type": "string"
+          },
+          "birthDate": {
+            "type": "string",
+            "description": "생년월일 `YYYY-MM-DD`. 주민등록번호는 두지 않는다."
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "F",
+              "M"
+            ],
+            "description": "성별. `F` 또는 `M`."
+          },
+          "synthetic": {
+            "type": "boolean",
+            "description": "시드가 만든 가상 환자면 `true`. CLOUD AI는 `true`인 환자만 받는다."
+          },
+          "phoneLast4": {
+            "type": "string",
+            "description": "전화번호 뒤 4자리. 목록에는 전체 번호를 싣지 않는다."
+          }
+        },
+        "required": [
+          "id",
+          "chartNumber",
+          "name",
+          "birthDate",
+          "sex",
+          "synthetic",
+          "phoneLast4"
+        ],
+        "additionalProperties": false,
+        "description": "목록의 환자."
+      },
+      "TotpInvalidEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "TOTP_INVALID"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:totp-invalid"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "TOTP code is invalid"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "TotpRequiredForRoleEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "TOTP_REQUIRED_FOR_ROLE"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:totp-required-for-role"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              409
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "TOTP cannot be disabled for this role"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "StaffSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "loginId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/StaffRole"
+          },
+          "emoji": {
+            "type": "string"
+          },
+          "synthetic": {
+            "type": "boolean",
+            "description": "시드가 만든 가상 직원이면 `true`."
+          }
+        },
+        "required": [
+          "id",
+          "loginId",
+          "name",
+          "role",
+          "emoji",
+          "synthetic"
+        ],
+        "additionalProperties": false,
+        "description": "직원."
+      },
+      "StaffRole": {
+        "type": "string",
+        "enum": [
+          "DIRECTOR",
+          "MANAGER",
+          "HYGIENIST",
+          "DESK"
+        ],
+        "description": "역할. 원장(`DIRECTOR`), 실장(`MANAGER`), 위생사(`HYGIENIST`), 데스크(`DESK`)."
+      },
+      "RefreshTokenReusedEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "REFRESH_TOKEN_REUSED"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:refresh-token-reused"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "Refresh token was reused"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "RefreshTokenInvalidEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "REFRESH_TOKEN_INVALID"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:refresh-token-invalid"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "Refresh token is invalid"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "ChallengeInvalidEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "CHALLENGE_INVALID"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:challenge-invalid"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "Login challenge is invalid"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "AccountLockedEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "ACCOUNT_LOCKED"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:account-locked"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              423
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "Account is locked"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      "InvalidCredentialsEncoded": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "INVALID_CREDENTIALS"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "urn:dlude:problem:invalid-credentials"
+            ]
+          },
+          "status": {
+            "type": "number",
+            "enum": [
+              401
+            ]
+          },
+          "title": {
+            "type": "string",
+            "enum": [
+              "Invalid login ID or password"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "Bearer"
+      }
+    }
+  },
+  "security": [],
+  "tags": [
+    {
+      "name": "system",
+      "description": "로컬 개발과 배포 확인에서 쓰는 생존 확인."
+    },
+    {
+      "name": "auth",
+      "description": "로그인 세션. 비밀번호 → TOTP 두 단계를 모든 직원이 거친다. access token은 본문으로, refresh token은 `HttpOnly` 쿠키로 준다."
+    },
+    {
+      "name": "me",
+      "description": "로그인한 직원 자신."
+    },
+    {
+      "name": "patients",
+      "description": "가상 환자(InternalChart). 주민등록번호는 두지 않는다."
+    }
+  ]
+}
