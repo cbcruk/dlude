@@ -61,3 +61,24 @@ export default class Clinic extends Cloudflare.DurableObject<Clinic>()(
 - **UnitOfWork:** semu의 `UnitOfWorkMiddleware`(4xx·5xx면 되돌림)를 `sql.withTransaction`으로 구현. `keepChanges`(실패 응답과 함께 남길 쓰기)는 트랜잭션 중첩(savepoint)으로 되는지 확인 필요
 - **타입:** 스파이크는 `as any` 두 곳(`state.raw.storage`의 타입 선언 차이, `fetch`의 Effect 요구 타입)으로 넘겼다. spec 단계에서 `tsc`로 정리할 것
 - **아직 확인하지 않은 것:** DO alarm으로 outbox 정책 돌리기, WebSocket Hibernation, Cron → DO, R2 서명 URL, 배포 환경 FTS5, `HttpPlatformStub` 대신 공식 웹 플랫폼 레이어가 있는지
+
+## 작업 2 확인 결과 (2026-11-16)
+
+[spec "가정"](spec.md#가정) 다섯 중 넷을 `alchemy dev`(로컬 workerd)에서 임시 코드로 확인했다. 시험 코드는 지웠다. 배포 환경 확인(PBKDF2 CPU 시간)은 작업 11.
+
+| 가정 | 결과 | 확인 방법 |
+|---|---|---|
+| `SqliteMigrator`가 DO 첫 요청 전에 돈다 | **맞음** | 안쪽 Effect(생성자)에서 `SqliteMigrator.run`. 로그 `constructor: migrations applied`가 첫 요청 처리 전에 찍힘. 코드를 바꿔 인스턴스를 다시 띄워도 `effect_sql_migrations`에 한 행 그대로(다시 적용 안 함). Alchemy 문서: 생성자는 인스턴스마다 한 번 `blockConcurrencyWhile` 아래에서 돈다 |
+| 중첩 트랜잭션은 자기만 되돌린다 | **맞음** | 바깥 성공 + 안쪽 실패 → `outer-before`, `outer-after`만 남음. 안쪽 성공 + 바깥 실패 → 아무것도 안 남음. `@effect/sql-sqlite-do`는 `storage.transaction()`을 깊이마다 쓴다 |
+| 트랜잭션 밖 문장은 바로 커밋된다 | **맞음** | 밖에서 `outside` 쓰고 실패하는 트랜잭션 → `outside`만 남음. 로그인 실패 횟수·보안 기록을 이렇게 쓴다 |
+| 한 Worker가 정적 파일과 DO 라우팅을 함께 한다 | **맞음** | Worker `assets: { directory: apps/web/dist, notFoundHandling: 'single-page-application', runWorkerFirst: ['/v1/*'] }`. `/` → `index.html`, `/patients/abc` → `index.html`(SPA), `/v1/health` → DO의 `{"status":"ok"}`, `/v1/nothing` → DO의 404(SPA로 새지 않음) |
+| PBKDF2가 Workers CPU 한도 안에 든다 | 미확인 | 작업 11(개인 단계 배포) |
+
+### F6 방법 결정
+
+spec F6이 plan으로 미룬 "방법"은 **Worker `assets`**로 정한다. `Website.Vite`는 Vite 플러그인이 Worker까지 빌드하는 방식이라 Alchemy의 Effect Worker(`Cloudflare.Worker(..., Effect.gen(...))`)와 섞기 어렵다. 대가: `pnpm dev`가 웹을 먼저 빌드한다(HMR은 `apps/web`에서 `vite`를 따로 띄우고 `/v1`을 프록시).
+
+### 스파이크 코드와 달라진 것
+
+- DO 안 HTTP 처리기는 생성자에서 **한 번** 만든다(`Scope.make()` + `HttpRouter.toHttpEffect`). 스파이크의 `Effect.flatten(fetch)`는 요청마다 레이어를 다시 만든다
+- `HttpPlatform` 스텁과 `as any` 두 곳이 없어졌다. `HttpServer.layerServices`가 workerd에서도 돈다. `state.raw.storage`도 캐스트 없이 `SqliteClient.layer`에 맞는다

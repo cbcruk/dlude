@@ -5,5 +5,5 @@
     "allowJs": true,
     "checkJs": true
   },
-  "include": ["tools", ".claude/hooks", "vitest.config.ts"]
+  "include": ["tools", ".claude/hooks", "vitest.config.ts", "alchemy.run.ts"]
 }
