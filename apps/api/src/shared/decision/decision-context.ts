@@ -1,6 +1,6 @@
 // from hemr@0c4b7e8 src/shared/decision/decision-context.ts — 테넌트를 빼고 행위자를 직원(`staff`)으로 바꿈.
-// 이벤트 행위자를 만드는 `eventContext`는 이벤트(`shared/events`)와 함께 작업 4에서 더한다.
 import { DateTime } from 'effect'
+import type { DomainEvent } from '../events/domain-event.ts'
 import type { Id } from '../ids/ids.types.ts'
 import { clinicDate } from '../time/clinic-date.ts'
 
@@ -20,4 +20,9 @@ export function decisionContext(access: { staffId: Id<'staff'> }, now: DateTime.
     today: clinicDate(DateTime.toEpochMillis(now)),
     staffId: access.staffId,
   }
+}
+
+/** 판정 함수가 이벤트에 적는 행위자. */
+export function eventContext(context: DecisionContext): Required<Pick<DomainEvent, 'actor'>> {
+  return { actor: { kind: 'STAFF', id: context.staffId } }
 }
