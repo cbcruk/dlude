@@ -16,7 +16,8 @@
     "verify": "pnpm typecheck && pnpm format:check && pnpm test",
     "dev": "pnpm --filter @dlude/web build && alchemy dev",
     "deploy": "pnpm --filter @dlude/web build && alchemy deploy",
-    "dev:reset": "node tools/dev-reset.mjs"
+    "dev:reset": "node tools/dev-reset.mjs",
+    "openapi": "node scripts/openapi.ts"
   },
   "devDependencies": {
     "@alchemy.run/cloudflare": "2.0.0-beta.87",
