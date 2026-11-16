@@ -1,15 +1,9 @@
-import { SqliteClient } from '@effect/sql-sqlite-node'
-import { Effect, Layer, Ref, Schema } from 'effect'
+import { Effect, Ref, Schema } from 'effect'
 import { describe, expect, it } from 'vitest'
-import { createIdempotencyTable, idempotent, IdempotencyStore, requestFingerprint } from './idempotency.ts'
+import { TestSql } from '../../testing/sql.ts'
+import { idempotent, requestFingerprint } from './idempotency.ts'
 
 const Result = Schema.Struct({ n: Schema.Int })
-
-// 작업 4에서 공용 테스트 SQLite(`testing/sql.ts`)가 생기면 그것으로 바꾼다
-const TestStore = IdempotencyStore.layer.pipe(
-  Layer.provideMerge(Layer.effectDiscard(createIdempotencyTable.pipe(Effect.orDie))),
-  Layer.provide(SqliteClient.layer({ filename: ':memory:' })),
-)
 
 describe('idempotent', () => {
   it('하루 안에는 처음 응답을 다시 주고, 다른 요청은 거부하고, 하루가 지나면 새로 실행한다', async () => {
@@ -27,7 +21,7 @@ describe('idempotent', () => {
         const reused = yield* Effect.flip(call({ a: 2 }, times[1]!))
         const late = yield* call({ a: 2 }, times[2]!)
         return { first, replay, reused: reused._tag, late, calls: yield* Ref.get(calls) }
-      }).pipe(Effect.provide(TestStore)),
+      }).pipe(Effect.provide(TestSql())),
     )
     expect(result).toEqual({
       first: { n: 1 },
@@ -44,7 +38,7 @@ describe('idempotent', () => {
         const input = { key: 'k', operation: 'test', request: {}, now: '2026-11-06T00:00:00.000Z', schema: Result }
         yield* Effect.flip(idempotent(input, Effect.fail('boom' as const)))
         return yield* idempotent(input, Effect.succeed({ n: 7 }))
-      }).pipe(Effect.provide(TestStore)),
+      }).pipe(Effect.provide(TestSql())),
     )
     expect(result).toEqual({ n: 7 })
   })
